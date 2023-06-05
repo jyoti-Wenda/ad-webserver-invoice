@@ -9,8 +9,8 @@ import pandas as pd
 
 
 def format_doc(doc_type, doc_name, extracted_data, pathfile):
-    if doc_type == 'bol':
-        return format_bol(doc_name, extracted_data)
+    if doc_type == 'invoice':
+        return format_invoice(doc_name, extracted_data)
     elif doc_type == 'loc':
         return loc(doc_name, extracted_data)
     else:
@@ -28,6 +28,19 @@ def prune_text(text):
 def cleanup_text(text):
     result = re.sub(r'[^a-zA-Z0-9]+', '', text)
     print('result',result)
+    return result
+
+def extract_gross_weight(text):
+    result = re.sub(r'[^0-9.,]+', '', text)
+    print('result', result)
+    return result
+
+'''
+# Remove all non-numeric characters from the text
+'''
+def extract_numbers(text):
+    result = re.sub(r'\D', '', text)
+    print('Gross weight:', result)
     return result
 
 
@@ -50,69 +63,82 @@ def remove_leading_trailing_special_characters(text):
 
 
 
-def format_bol(doc_name, extracted_data):
+def format_invoice(doc_name, extracted_data):
     """
     EXAMPLE extracted_data
     {
-       "0":{
-          "detection_index":"0.80",
-          "data_to_review":[
-             {
-                "key":"Header",
-                "type":"Inputs",
-                "value":[
-                   {
-                      "key":"booking number",
-                      "value":"CNAN12961",
-                      "state":"INCOMPLETE"
-                   },
-                   {
-                      "key":"container id",
-                      "value":"EMAU3021997",
-                      "state":"INCOMPLETE"
-                   },
-                   {
-                      "key":"signer name",
-                      "value":"DANIELA  FASANELLA",
-                      "state":"INCOMPLETE"
-                   },
-                   {
-                      "key":"shipper",
-                      "value":"COMPANY SPA",
-                      "state":"INCOMPLETE"
-                   },
-                   {
-                      "key":"vgm",
-                      "value":"Kg  27260",
-                      "state":"INCOMPLETE"
-                   }
-                ],
-                "page":1
-             }
-          ]
-       },
-       "1":{
-          "detection_index":"0.80",
-          "data_to_review":[
-             {
-                "key":"Header",
-                "type":"Inputs",
-                "value":[
-                   {
-                      "key":"container id",
-                      "value":"EMAU3021997",
-                      "state":"INCOMPLETE"
-                   },
-                   {
-                      "key":"vgm",
-                      "value":"27.260",
-                      "state":"INCOMPLETE"
-                   }
-                ],
-                "page":2
-             }
-          ]
-       }
+    "data_to_review": [
+        [
+        {
+            "key": "Header",
+            "page": 1,
+            "type": "Inputs",
+            "value": [
+            {
+                "key": "shipper",
+                "state": "INCOMPLETE",
+                "value": "Via  Irno,  221  I-84135  Salerno  -  Italy  -"
+            },
+            {
+                "key": "consignee",
+                "state": "INCOMPLETE",
+                "value": "SOCIETE  ALGERIENNE  DE  PRODUCTION  DE  L  ELECTRICITE  SPE,  SPA  ROUTE  NATIONALE  N  38,  IMMEUBLE  DES  700  BEREAUX  GUE  DE  CONSTANTINE  KOUBA  ALGER  SAME  AS  CONSIGNEE"
+            },
+            {
+                "key": "notify",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "incoterms",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "cad",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "container_type",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "container_id",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "seal_number",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "package_quantity",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "description",
+                "state": "INCOMPLETE",
+                "value": ""
+            },
+            {
+                "key": "gross_weight",
+                "state": "INCOMPLETE",
+                "value": "Gross  Weight:  Kg.  710,00"
+            },
+            {
+                "key": "hs_code",
+                "state": "INCOMPLETE",
+                "value": ""
+            }
+            ]
+        }
+        ]
+    ],
+    "detection_index": 0.8
     }
     """
 
@@ -157,16 +183,16 @@ def format_bol(doc_name, extracted_data):
                         value = remove_leading_trailing_special_characters(element_item['value'])
                         container_id.append(value)
                     if element_item['key'] == 'seal_number' and element_item['value'] != "":
-                        value = extract_alphanumeric(element_item['value'])
+                        value = extract_numbers(element_item['value'])
                         seal_number.append(value)
                     if element_item['key'] == 'package_quantity' and element_item['value'] != "":
-                        value = remove_leading_trailing_special_characters(element_item['value'])
+                        value = extract_numbers(element_item['value'])
                         package_quantity.append(value)
                     if element_item['key'] == 'description' and element_item['value'] != "":
                         value = remove_leading_trailing_special_characters(element_item['value'])
                         description.append(value)
                     if element_item['key'] == 'gross_weight' and element_item['value'] != "":
-                        value = extract_numeric_values(element_item['value'])
+                        value = extract_gross_weight(element_item['value'])
                         gross_weight.append(value)
                     if element_item['key'] == 'hs_code' and element_item['value'] != "":
                         value = extract_numeric_values(element_item['value'])

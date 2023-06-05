@@ -52,7 +52,7 @@ def elab_file(user, filePath, save, output, ocr,webhook, pathfile, localpath, se
             AWSutils.uploadToBucket(s3BucketName, s3BucketRegion, serviceDirectory, UPLOAD_FOLDER, user, os.path.basename(filePath))
         formatted_result, result = lmutils.elab(filePath,ocr)
         if output.lower() == 'excel':
-            output_file, output_name = xlsutils.format_doc('loc', os.path.basename(filePath), result, pathfile)
+            output_file, output_name = xlsutils.format_doc('invoice', os.path.basename(filePath), result, pathfile)
             print('output_file',output_file)
             doc_name_contents = re.split("_", os.path.basename(filePath), 2)
             if len(doc_name_contents) == 3:

@@ -85,4 +85,4 @@ def elab_result(task_id):
         return make_response(output_file, 200)
 
 
-app.register_blueprint(bp, url_prefix='/activedocuments/loc')
+app.register_blueprint(bp, url_prefix='/activedocuments/invoice')

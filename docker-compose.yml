@@ -5,7 +5,7 @@ services:
     build: './flask_app'
     restart: unless-stopped
     ports:
-      - "6021:5000"
+      - "6011:5000"
     depends_on:
       - rabbit
     volumes:

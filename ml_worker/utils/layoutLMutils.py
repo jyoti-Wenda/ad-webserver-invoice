@@ -416,6 +416,21 @@ def createDataframe(labels, words):
     return df_main, df_details
 
 
+def update_dataframe(myDataFrame):
+    # Check if "key" and "value" columns exist in the DataFrame
+    if "labels" in myDataFrame.columns and "values" in myDataFrame.columns:
+        # Check if "notify" key exists in the DataFrame
+        if "notify" not in myDataFrame["labels"].values:
+            # Check if "consignee" key exists in the DataFrame
+            if "consignee" in myDataFrame["labels"].values:
+                # Find the index of "consignee" key
+                consignee_index = myDataFrame.loc[myDataFrame["labels"] == "consignee"].index[0]
+                # Assign the value of "consignee" to "notify" key
+                myDataFrame = myDataFrame.append({"labels": "notify", "values": myDataFrame.loc[consignee_index, "values"]}, ignore_index=True)
+
+    return myDataFrame
+
+
 def process_form(preds, words, bboxes):
     logger.info('process_form start')
     # the following combines all labels (preds) with the associated words;
@@ -423,8 +438,7 @@ def process_form(preds, words, bboxes):
     # of more than 1 word)
     cmb_list = []
     for ix, (prediction, box) in enumerate(zip(preds, bboxes)):
-        predicted_label = id2label.get(prediction).lower()
-        cmb_list.append([predicted_label, words[ix]])
+        cmb_list.append([prediction, words[ix]])
 
     # the following groups the words with the same label
     grouper = lambda l: [[k] + sum((v[1::] for v in vs), []) for k, vs in groupby(l, lambda x: x[0])]
@@ -435,39 +449,28 @@ def process_form(preds, words, bboxes):
         json_dict[x[0]] = (' ').join(x[1:])
         lst_final.append(json_dict)
 
-    # the following merges all values with the same key in the
-    # dictionaries of lst_final in one dictionary of lists
-    list_merged = dict()
-    for d in lst_final:
-        for key in d.keys():
-            value = d[key]
-            if key != "others" and key not in details_keys:
-                if key in list_merged:
-                    if not isinstance(list_merged[key], list):
-                        # converting key to list type
-                        list_merged[key] = [list_merged[key]]
+    # TODO: check if replace with createDataframe
+    columns = id2label.values()
+    data = dict()
+    for c in columns:
+        data[c] = []
+    for i in lst_final:  # list of dicts
+        for k in i:  # dict
+            v = i[k]  # value
+            if k in columns and k != "others":  # if the key is one of the relevant predictions:
+                data[k].append(v)
 
-                        list_merged[key].append(value)
-                else:
-                    list_merged[key] = value
-
-    # now we have a dict of lists, for each list we concat the strings in the list
-    concat_list = dict()
-    for key in list_merged.keys():
-        value_list = list_merged[key]
-        if isinstance(value_list, list):
-            value = " ".join(value_list)
-            concat_list[key] = value
-        else:
-            concat_list[key] = value_list
-
-    # finally we transform it into the dataframe.
-    # This dataframe contains ONLY the non-repeating keys - not the details!
-    df_main = pd.DataFrame(list(concat_list.items()), columns=["labels", "values"])
+    # join the list of strings for each column and convert to a dataframe
+    key_value_pairs = []
+    for col in columns:
+        if col != "others":
+            val = ' '.join(data[col])
+            key_value_pairs.append({'labels': col, 'values': val})
+    df_main = pd.DataFrame(key_value_pairs)
     df_details = pd.DataFrame()
-
+    df_main  = update_dataframe(df_main)
     logger.info('process_form end')
-    return [df_main, df_details]
+    return [df_main , df_details]
 
 
 def process_PDF(filePath, ocr):
@@ -483,7 +486,7 @@ def process_PDF(filePath, ocr):
         page = doc.load_page(i)     # number of page
         zoom = 2                    # zoom factor
         mat = fitz.Matrix(zoom, zoom)
-        pix = page.get_pixmap(matrix = mat, dpi = 200)
+        pix = page.get_pixmap(matrix = mat, dpi = 300)
         if filePath[-4:] == ".pdf":
             imgOutput = filePath.replace(".pdf", "_{}.png".format(i))
         elif filePath[-4:] == ".PDF":
@@ -503,7 +506,7 @@ def process_PDF(filePath, ocr):
             print(angle)
             out = remove_borders(skewed_image)
             cv2.imwrite(imgOutput, out)
-            out.save(imgOutput)
+        #out.save(imgOutput)
         # each image goes through the model
         pageResult = process_page(imgOutput, ocr)
         # result is saved in a dict-like shape to be returned
