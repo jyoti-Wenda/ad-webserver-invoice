@@ -27,12 +27,10 @@ def prune_text(text):
 
 def cleanup_text(text):
     result = re.sub(r'[^a-zA-Z0-9]+', '', text)
-    print('result',result)
     return result
 
 def extract_gross_weight(text):
     result = re.sub(r'[^0-9.,]+', '', text)
-    print('result', result)
     return result
 
 '''
@@ -40,7 +38,6 @@ def extract_gross_weight(text):
 '''
 def extract_numbers(text):
     result = re.sub(r'\D', '', text)
-    print('Gross weight:', result)
     return result
 
 
@@ -51,7 +48,6 @@ def extract_numeric_values(text):
 
 def extract_alphanumeric(text):
     result = re.findall(r'[a-zA-Z0-9]+', text)
-    print('result', result)
     return result
 
 
@@ -59,8 +55,6 @@ def extract_alphanumeric(text):
 def remove_leading_trailing_special_characters(text):
     result = re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', text)
     return result
-
-
 
 
 def format_invoice(doc_name, extracted_data):
